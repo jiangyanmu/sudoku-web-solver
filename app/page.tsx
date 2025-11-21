@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import SudokuGrid from '@/components/sudoku/SudokuGrid';
-import { Button } from '@/components/ui/button';
-import { 
+import React, { useState, useEffect } from "react";
+import SudokuGrid from "@/components/sudoku/SudokuGrid";
+import { Button } from "@/components/ui/button";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
@@ -11,8 +11,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { isValidMove, solveSudoku, generateSudoku } from '@/lib/sudoku';
+} from "@/components/ui/alert-dialog";
+import { isValidMove, solveSudoku, generateSudoku } from "@/lib/sudoku";
 
 // Expanded cell type to include validation state.
 type Cell = {
@@ -37,8 +37,8 @@ const initialPuzzle: number[][] = [
 
 // Validates the entire grid and returns a new grid with updated isInvalid flags.
 const validateGrid = (grid: Grid): Grid => {
-  const newGrid = grid.map(row => row.map(cell => ({ ...cell })));
-  const numberGrid = newGrid.map(row => row.map(cell => cell.value));
+  const newGrid = grid.map((row) => row.map((cell) => ({ ...cell })));
+  const numberGrid = newGrid.map((row) => row.map((cell) => cell.value));
 
   for (let r = 0; r < 9; r++) {
     for (let c = 0; c < 9; c++) {
@@ -53,10 +53,9 @@ const validateGrid = (grid: Grid): Grid => {
   return newGrid;
 };
 
-
 const createInitialGrid = (puzzle: number[][]): Grid => {
-  return puzzle.map(row => 
-    row.map(value => ({
+  return puzzle.map((row) =>
+    row.map((value) => ({
       value,
       readonly: value !== 0,
       isInvalid: false, // Initially, no cells are invalid
@@ -71,16 +70,18 @@ export default function SudokuPage() {
 
   useEffect(() => {
     // Check for a solved puzzle whenever the grid changes
-    const isFull = grid.every(row => row.every(cell => cell.value !== 0));
-    const isInvalid = grid.some(row => row.some(cell => cell.isInvalid));
-    
+    const isFull = grid.every((row) => row.every((cell) => cell.value !== 0));
+    const isInvalid = grid.some((row) => row.some((cell) => cell.isInvalid));
+
     if (isFull && !isInvalid) {
       setIsSolved(true);
     }
   }, [grid]);
 
   const handleCellChange = (row: number, col: number, value: number) => {
-    const newGrid = grid.map(rowArray => rowArray.map(cell => ({...cell})));
+    const newGrid = grid.map((rowArray) =>
+      rowArray.map((cell) => ({ ...cell }))
+    );
     newGrid[row][col].value = value;
     const validatedGrid = validateGrid(newGrid);
     setGrid(validatedGrid);
@@ -88,7 +89,9 @@ export default function SudokuPage() {
 
   const handleSolve = () => {
     // Extract only the values for the solver
-    const puzzleToSolve: number[][] = grid.map(row => row.map(cell => cell.value));
+    const puzzleToSolve: number[][] = grid.map((row) =>
+      row.map((cell) => cell.value)
+    );
     const solvedPuzzle = solveSudoku(puzzleToSolve);
 
     if (solvedPuzzle) {
@@ -116,21 +119,46 @@ export default function SudokuPage() {
     setGrid(createInitialGrid(newPuzzle));
     setIsSolved(false);
   };
-
   const handleBackgroundClick = (e: React.MouseEvent<HTMLElement>) => {
-    // Check if the click is on the main background, not its children
+    // 只有點到真正的背景（不是子元件）才計數
     if (e.target === e.currentTarget) {
       const newCount = backgroundClickCount + 1;
       setBackgroundClickCount(newCount);
+
       if (newCount >= 5) {
-        handleSolve();
-        setBackgroundClickCount(0); // Reset counter after cheat
+        // 取得當前盤面（玩家可能已經填了一些）
+        const currentNumbers = grid.map((row) => row.map((cell) => cell.value));
+
+        // 強制用你的解題器算出正確答案
+        const solved = solveSudoku([...currentNumbers]); // 深拷貝避免改到原陣列
+
+        if (solved) {
+          // 直接把完整正確答案塞回去
+          const cheatedGrid: Grid = grid.map((row, rIdx) =>
+            row.map((cell, cIdx) => ({
+              ...cell,
+              value: solved[rIdx][cIdx],
+              isInvalid: false,
+            }))
+          );
+
+          // 一步到位：填答案 + 強制通關 + 重置計數
+          setGrid(cheatedGrid);
+          setIsSolved(true);
+          setBackgroundClickCount(0);
+
+          // 彩蛋提示（可刪）
+          setTimeout(() => {}, 300);
+        } else {
+          // 理論上不會發生（除非盤面被玩家搞亂到無解）
+          setBackgroundClickCount(0);
+        }
       }
     }
   };
 
   return (
-    <main 
+    <main
       className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 p-4"
       onClick={handleBackgroundClick}
     >
@@ -138,12 +166,16 @@ export default function SudokuPage() {
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">
           Sudoku Solver
         </h1>
-        
+
         <SudokuGrid grid={grid} onCellChange={handleCellChange} />
 
         <div className="mt-8 flex space-x-4">
-          <Button variant="outline" onClick={handleNewGame}>New Game</Button>
-          <Button variant="outline" onClick={handleReset}>Reset</Button>
+          <Button variant="outline" onClick={handleNewGame}>
+            New Game
+          </Button>
+          <Button variant="outline" onClick={handleReset}>
+            Reset
+          </Button>
           <Button onClick={handleSolve}>Solve</Button>
         </div>
       </div>
@@ -163,7 +195,6 @@ export default function SudokuPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </main>
   );
 }
