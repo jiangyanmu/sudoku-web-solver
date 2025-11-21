@@ -15,9 +15,11 @@ type GridData = CellData[][];
 interface SudokuGridProps {
   grid: GridData;
   onCellChange: (row: number, col: number, value: number) => void;
+  selectedCell: [number, number] | null;
+  onCellSelect: (row: number, col: number) => void;
 }
 
-const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange }) => {
+const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange, selectedCell, onCellSelect }) => {
   return (
     <div 
       className="grid grid-cols-9 border-collapse border-2 border-gray-900 dark:border-gray-200"
@@ -27,10 +29,7 @@ const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange }) => {
     >
       {grid.map((row, rowIndex) =>
         row.map((cell, colIndex) => {
-          const borderClasses = [
-            (rowIndex + 1) % 3 === 0 && rowIndex < 8 ? 'border-b-2 border-gray-900 dark:border-gray-200' : '',
-            (colIndex + 1) % 3 === 0 && colIndex < 8 ? 'border-r-2 border-gray-900 dark:border-gray-200' : '',
-          ].filter(Boolean).join(' ');
+          const isSelected = selectedCell ? selectedCell[0] === rowIndex && selectedCell[1] === colIndex : false;
 
           return (
             <Cell
@@ -40,7 +39,9 @@ const SudokuGrid: React.FC<SudokuGridProps> = ({ grid, onCellChange }) => {
               value={cell.value}
               readonly={cell.readonly}
               isInvalid={cell.isInvalid}
+              isSelected={isSelected}
               onChange={onCellChange}
+              onSelect={onCellSelect}
             />
           );
         })
